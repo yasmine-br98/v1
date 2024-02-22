@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CANCELLED
+  PENDING
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  CANCELLED
+  PENDING
+  FULL
+  UNAVAILABLE
+}
+
+enum GalleryType {
+  PHOTO
+  VIDEO
+  MIXED
+}
+
+model CustomerCompany {
+  id                      String    @id @default(uuid())
+  taxIdentificationNumber String
+  corporateName           String
+  tradeName               String
+  image                   String
+  address                 String
+  responsableName         String
+  responsablePosition     String
+  contactPhoneNumber      String
+  contactEmail            String
+  country                 String
+  sector                  String
+  businesSize             String
+  region                  String?
+  customer                Customer?
+  events                  Event[]
+}
+
+model Customer {
+  id          String @id @default(uuid())
+  firstName   String
+  lastName    String
+  password    String
+  email       String
+  phoneNumber String
+
+  customerCompany   CustomerCompany @relation(fields: [CustomerCompanyId], references: [id])
+  CustomerCompanyId String          @unique
+}
+
+model SupplierCompany {
+  id                      String    @id @default(uuid())
+  taxIdentificationNumber String
+  corporateName           String
+  tradeName               String
+  image                   String
+  address                 String
+  responsableName         String
+  responsablePosition     String
+  contactPhoneNumber      String
+  contactEmail            String
+  supplier                Supplier?
+  products                Product[]
+}
+
+model Product {
+  id                  String          @id @default(uuid())
+  title               String
+  image               String
+  shareLink           String
+  category            String
+  location            String
+  shortDescription    String
+  detailedDescription String
+  gallery             GalleryType     @default(PHOTO)
+  fee                 Float
+  participantCount    Int
+  activityDuration    DateTime
+  conditions          String
+  contactEmail        String
+  contactPhoneNumber  String
+  supplierName        String
+  calendar            Calendar?
+  offers              OfferProduct[]
+  reservations        Reservation[]
+  supplierCompanyId   String          @unique
+  supplierCompany     SupplierCompany @relation(fields: [supplierCompanyId], references: [id])
+
+  Offer Offer?
+}
+
+model Offer {
+  id        String         @id @default(uuid())
+  fee       Float
+  duration  DateTime
+  product   Product        @relation(fields: [productId], references: [id])
+  productId String         @unique
+  products  OfferProduct[]
+}
+
+model OfferProduct {
+  id        String  @id @default(uuid())
+  productId String
+  offerId   String
+  product   Product @relation(fields: [productId], references: [id])
+  offer     Offer   @relation(fields: [offerId], references: [id])
+
+  @@unique([productId, offerId])
+}
+
+model Supplier {
+  id                String          @id @default(uuid())
+  firstName         String
+  lastName          String
+  password          String
+  email             String
+  phoneNumber       String
+  supplierCompany   SupplierCompany @relation(fields: [supplierCompanyId], references: [id])
+  supplierCompanyId String          @unique
+}
+
+model SuperAdmin {
+  id          String @id @default(uuid())
+  firstName   String
+  lastName    String
+  password    String
+  email       String
+  phoneNumber String
+}
+
+model Calendar {
+  id        String     @id @default(uuid())
+  date      DateTime
+  status    SlotStatus
+  product   Product    @relation(fields: [productId], references: [id])
+  productId String     @unique
+}
+
+model Event {
+  id                String          @id @default(uuid())
+  state             Boolean
+  shareLink         String
+  date              DateTime
+  participantCount  Int
+  corporatename     String
+  title             String
+  complaint         Complaint?
+  review            Review?
+  reservations      Reservation[]
+  customerCompanyId String          @unique
+  customerCompany   CustomerCompany @relation(fields: [customerCompanyId], references: [id])
+}
+
+model Reservation {
+  id                    String            @id @default(uuid())
+  eventDate             DateTime
+  date                  DateTime
+  status                ReservationStatus
+  amount                Float
+  paymentMethod         String
+  additionalInformation String
+  productId             String            @unique
+  product               Product           @relation(fields: [productId], references: [id])
+  eventId               String            @unique
+  event                 Event             @relation(fields: [eventId], references: [id])
+}
+
+model Complaint {
+  id       String   @id @default(uuid())
+  date     DateTime
+  comments String
+  image    String
+  eventId  String   @unique
+  event    Event    @relation(fields: [eventId], references: [id])
+}
+
+model Review {
+  id       String @id @default(uuid())
+  rate     Int
+  comments String
+  image    String
+  eventId  String @unique
+  event    Event  @relation(fields: [eventId], references: [id])
+}
